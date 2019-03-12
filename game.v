@@ -58,7 +58,7 @@ module final_project(
 			.VGA_BLANK(VGA_BLANK_N),
 			.VGA_SYNC(VGA_SYNC_N),
 			.VGA_CLK(VGA_CLK));
-		defparam VGA.RESOLUTION = "320x240";
+		defparam VGA.RESOLUTION = "160x120";
 		defparam VGA.MONOCHROME = "FALSE";
 		defparam VGA.BITS_PER_COLOUR_CHANNEL = 1;
 		defparam VGA.BACKGROUND_IMAGE = "black.mif";
@@ -66,7 +66,7 @@ module final_project(
 //    wire [319:0] new_array = 320'b00000000001000000000010000000001000000000010000000000000000010000000000000000001000000000000000100000000001100000000000000000100000000000000000100000000000000010000000000010000000000001000000000000000010000000000000000110000000000000000100000000000000000010000000000001100000000000011000000000000000001000000000000000011;
     wire [27:0] rate = 28'b0000001011011100011011000000;
 //   wire [159:0] floor = 120'b0;
-    wire [159:0] draw;
+    wire [319:0] draw;
 
     wire start, move;
     
@@ -163,7 +163,7 @@ module datapath (
     input jump,
     input [27:0] rate,
 	input resetn,
-	output reg [159:0] draw,
+	output reg [319:0] draw,
 	output [9:0] LEDR
     );
     
@@ -175,6 +175,9 @@ module datapath (
 
 	// the height control
     reg [1:0] height = 2'b00;
+	 
+	 reg [4:0] start_falling = 5'b0;
+
 	 
 	// press jump will only allow the runner to jump once
 	reg jumpOnce = 1'b0;
@@ -204,19 +207,33 @@ module datapath (
 					obstacles[319:0] = {obstacles[317:0], obstacles[319:318]};
 				// height will change if it is already jumping or jump button
 				// is pushed
-					if (jump || (height) != 2'b00) begin
-						if (height == 2'b11) 
-							going_up = 1'b0;
-						if (going_up)
-							height = height + 1;
-						else 
-							height = height - 1;
-						if (height == 2'b00) 
-							going_up = 1'b1;
-					end
-					draw[159:158] = height;
+					if (jump) begin
+						start_falling = 5'b1111;
+						going_up = 1'b1;
+						end
+					else if (start_falling > 0)
+						start_falling = start_falling - 1;
+					else 
+						going_up = 1'b0;
+					if (going_up)
+						height = height + 1;
+					else
+						height = height -1;
+				
+//					if (jump) begin
+//						if (height == 2'b11) 
+//							going_up = 1'b0;
+//						if (going_up)
+//							height = height + 1;
+//						else 
+//							height = height - 1;
+//						if (height == 2'b00) 
+//							going_up = 1'b1;
+//					end
+					draw[319:318] = height;
 				end
             else begin
+				
 				count <= count - 1;
 				/*if (jump) begin
 					if (height == 2'b11) 
@@ -233,7 +250,7 @@ module datapath (
 						if (!going_up)
 						//going_up = 1'b1;
 							jumpOnce = 1'b1;
-					end
+					endlocal_draw
 					// leftmost two digits of draw used as runner
 					draw[159:158] = height;
 				end
@@ -256,7 +273,7 @@ module datapath (
 endmodule
 
 module display (
-    input [159:0] floor,
+    input [319:0] floor,
     input clk,
 	input resetn,
     output reg [7:0] x,
@@ -266,32 +283,32 @@ module display (
     
     // initialization
     reg [7:0] x_init=8'd2;
-    reg [8:0] y_init = 9'd120;
+    reg [8:0] y_init = 9'd84;
     reg [2:0] count = 3'b000;
-	reg [10:0] counter = 11'b0;
+	reg [12:0] counter = 13'b0;
 
 	// counts from 0 to 9 for the first two pixel for the runner
 	reg [4:0] runner_count = 5'b0;
 	reg [2:0] runner_height = 3'b0;
 
 	// copy of floor value, will do left shift on local value
-	reg [159:0] local_draw;
+	reg [319:0] local_draw;
 	// reg [159:0] local_draw = 
     
     always@(posedge clk) begin
 		if (!resetn) begin
 			x_init <= 8'd2;
-			y_init <= 9'd120;
+			y_init <= 9'd84;
 			count <= 3'b000;
-			counter <= 11'b0;
+			counter <= 13'b0;
 			local_draw <= floor<<2;
 		end
 		else begin
-			if (counter < 11'd652) begin
+			if (counter < 13'd652) begin
 				// fisrt 20 counts used to display runner
-				if (counter < 11'd20) begin
+				if (counter < 13'd20) begin
 					// fisrt or second pixel
-					if (counter < 11'd10) 
+					if (counter < 13'd10) 
 						x <= 8'd0;
 					else 
 						x <= 8'd1;
@@ -299,16 +316,15 @@ module display (
 					runner_count = counter % 10;
 					y = y_init - runner_count;
 					// runner's height
-					runner_height = floor[159:158] * 2;
-					if (runner_count == 5'd0) 
-						// base line
-						colour = 3'b110;
+					runner_height = floor[319:318] * 2;
+					if (runner_count == 5'd0)
+						colour = 3'b011;
 					else if (runner_count < runner_height || runner_count > runner_height + 3)
 						// dark part
-						colour = 3'b000;
+						colour = 3'b011;
 					else 
 						// runner part
-						colour = 3'b101;
+						colour = 3'b100;
 				end
 				else 
 				// next 632 counts (158 pixels) to display obstacles 
@@ -318,12 +334,12 @@ module display (
 					x <= x_init + count[2];
 					// the base line case
 					if (count[1:0] == 2'b00) begin
-						colour <= 3'b110;
+						colour <= 3'b011;
 						y <= y_init;
 					end 
 					else begin 
 						/*if (counter < 11'd8) begin
-							// the runner case
+							// the runner casdarke
 							// make the height of runner: draw * 2
 							y_init = 7'd80 - local_draw[159:158] * 2;
 							colour = 3'b101;
@@ -334,10 +350,10 @@ module display (
 						//if (count[1:0] == 2'b00)
 						//	colour = 3'b110;
 						//else 
-						if (count[1:0] > local_draw[159:158])
-							colour = 3'b000;
+						if (count[1:0] > local_draw[319:318])
+							colour = 3'b011;
 						else 
-							colour = 3'b010;
+							colour = 3'b110;
 						//end
 						y <= y_init - count[1:0];
 					end
@@ -351,9 +367,9 @@ module display (
 			end
 			else begin 
 				x_init <= 8'd2;
-				y_init <= 9'd120;
+				y_init <= 9'd84;
 				count <= 3'b000;
-				counter <= 11'b0;
+				counter <= 13'b0;
 				local_draw <= floor << 2;
 			end
 		end
