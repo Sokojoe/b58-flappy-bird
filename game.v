@@ -66,7 +66,7 @@ module final_project(
 //    wire [319:0] new_array = 320'b00000000001000000000010000000001000000000010000000000000000010000000000000000001000000000000000100000000001100000000000000000100000000000000000100000000000000010000000000010000000000001000000000000000010000000000000000110000000000000000100000000000000000010000000000001100000000000011000000000000000001000000000000000011;
     wire [27:0] rate = 28'b0000001011011100011011000000;
 //   wire [159:0] floor = 120'b0;
-    wire [319:0] draw;
+    wire [322:0] draw;
 
     wire start, move;
     
@@ -163,7 +163,7 @@ module datapath (
     input jump,
     input [27:0] rate,
 	input resetn,
-	output reg [319:0] draw,
+	output reg [322:0] draw,
 	output [9:0] LEDR
     );
     
@@ -174,7 +174,7 @@ module datapath (
 	reg [319:0] obstacles;
 
 	// the height control
-    reg [1:0] height = 2'b00;
+    reg [4:0] height = 4'b00;
 	 
 	 reg [4:0] start_falling = 5'b0;
 
@@ -188,13 +188,13 @@ module datapath (
     always@(posedge clk) begin
 		if (!resetn) begin
 			count <= rate;
-			height <= 2'b00;
+			height <= 4'b00;
 			going_up <= 1'b1;
 			jumpOnce <= 1'b0;
 		end
         else if (start) begin
         	count <= rate;
-        	height <= 2'b00;
+        	height <= 4'b00;
          	draw <= 160'b0;
 			obstacles[319:0] <= 320'b00000000000000000100000000000100000000001000000000000000001000000000000000000100000000000000010000000000110000000000000000010000000000000000010000000000000001000000000001000000000000100000000000000001000000000000000011000000000000000010000000000000000001000000000000110000000000001100000000000000000100000000000000001100;
 			going_up <= 1'b1;
@@ -230,7 +230,7 @@ module datapath (
 //						if (height == 2'b00) 
 //							going_up = 1'b1;
 //					end
-					draw[319:318] = height;
+					draw[322:318] = height;
 				end
             else begin
 				
@@ -273,7 +273,7 @@ module datapath (
 endmodule
 
 module display (
-    input [319:0] floor,
+    input [322:0] floor,
     input clk,
 	input resetn,
     output reg [7:0] x,
@@ -289,10 +289,10 @@ module display (
 
 	// counts from 0 to 9 for the first two pixel for the runner
 	reg [4:0] runner_count = 5'b0;
-	reg [2:0] runner_height = 3'b0;
+	reg [4:0] runner_height = 3'b0;
 
 	// copy of floor value, will do left shift on local value
-	reg [319:0] local_draw;
+	reg [322:0] local_draw;
 	// reg [159:0] local_draw = 
     
     always@(posedge clk) begin
@@ -306,9 +306,9 @@ module display (
 		else begin
 			if (counter < 13'd652) begin
 				// fisrt 20 counts used to display runner
-				if (counter < 13'd20) begin
+				if (counter < 13'd40) begin
 					// fisrt or second pixel
-					if (counter < 13'd10) 
+					if (counter < 13'd20) 
 						x <= 8'd0;
 					else 
 						x <= 8'd1;
@@ -316,7 +316,7 @@ module display (
 					runner_count = counter % 10;
 					y = y_init - runner_count;
 					// runner's height
-					runner_height = floor[319:318] * 2;
+					runner_height = floor[322:318];
 					if (runner_count == 5'd0)
 						colour = 3'b011;
 					else if (runner_count < runner_height || runner_count > runner_height + 3)
@@ -338,7 +338,7 @@ module display (
 						y <= y_init;
 					end 
 					else begin 
-						/*if (counter < 11'd8) begin
+						/*if (counter < 1counter1'd8) begin
 							// the runner casdarke
 							// make the height of runner: draw * 2
 							y_init = 7'd80 - local_draw[159:158] * 2;
@@ -350,7 +350,7 @@ module display (
 						//if (count[1:0] == 2'b00)
 						//	colour = 3'b110;
 						//else 
-						if (count[1:0] > local_draw[319:318])
+						if (count[1:0] > local_draw[322:318])
 							colour = 3'b011;
 						else 
 							colour = 3'b110;
