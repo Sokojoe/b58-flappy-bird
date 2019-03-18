@@ -212,7 +212,7 @@ module datapath (
 					lose <= 1'b1
 				// Maybe set max height aswell?
 				// Not sure about height of pipes but add a check here to make sure height of bird is inbetween height of pipes
-				if (height < pipe_lower || height > pipe_upper)
+				if (height < obstacles[319:318])
 					lose <= 1'b1
 				// height will change if it is already jumping or jump button is pushed
 				if (jump) begin
