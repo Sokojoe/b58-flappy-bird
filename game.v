@@ -287,9 +287,9 @@ module display (
     reg [2:0] count = 3'b000;
 	reg [12:0] counter = 13'b0;
 
-	// counts from 0 to 9 for the first two pixel for the runner
-	reg [4:0] runner_count = 5'b0;
-	reg [4:0] runner_height = 3'b0;
+	// counts from 0 to 19 for the first two pixel for the runner
+	reg [5:0] runner_count = 6'b0;
+	reg [4:0] runner_height = 5'b0;
 
 	// copy of floor value, will do left shift on local value
 	reg [322:0] local_draw;
@@ -305,7 +305,7 @@ module display (
 		end
 		else begin
 			if (counter < 13'd652) begin
-				// fisrt 20 counts used to display runner
+				// fisrt 40 counts used to display runner
 				if (counter < 13'd40) begin
 					// fisrt or second pixel
 					if (counter < 13'd20) 
@@ -313,7 +313,7 @@ module display (
 					else 
 						x <= 8'd1;
 					// stands for current display height
-					runner_count = counter % 10;
+					runner_count = counter % 20;
 					y = y_init - runner_count;
 					// runner's height
 					runner_height = floor[322:318];
