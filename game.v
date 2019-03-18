@@ -127,7 +127,7 @@ module control(
 		case (cur)
 			S_READY: next = go ? S_READY_WAIT : S_READY;
 			S_READY_WAIT: next = S_MOVE;
-			S_MOVE: next = stop ? S_STOP : S_MOVE;
+			S_MOVE: next = stop ? S_STOP : (lose ? S_READY : S_MOVE);
 			S_STOP: next = S_READY;
 			default: next = S_READY;
 		endcase
