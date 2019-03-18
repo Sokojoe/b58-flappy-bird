@@ -68,7 +68,7 @@ module final_project(
 //   wire [159:0] floor = 120'b0;
     wire [322:0] draw;
 
-    wire start, move;
+    wire start, move, lose;
     
     control c(
 	.clk(CLOCK_50),
@@ -76,7 +76,8 @@ module final_project(
 	.stop(~KEY[1]),
     .start(start),
 	.resetn(resetn),
-	.move(move)
+	.move(move),
+	.lose(lose)
 	);
 
     // key 3 used as jump button
@@ -88,7 +89,8 @@ module final_project(
 	.rate(rate),
 	.resetn(resetn),
 	.draw(draw),
-	.LEDR(LEDR[9:0])
+	.LEDR(LEDR[9:0]),
+	.lose(lose)
 	);
 
     display d0(
@@ -107,6 +109,7 @@ module control(
 	input go,
 	input stop,
 	input resetn,
+	input lose,
 	output reg start,
 	output reg move
 	);
@@ -118,6 +121,7 @@ module control(
 		  S_MOVE  = 5'd2,
 		  S_STOP  = 5'd3;
 	
+	// Add to state table lose => S_READY
 	always@(*)
 	begin: state_table
 		case (cur)
@@ -165,6 +169,7 @@ module datapath (
 	input resetn,
 	output reg [322:0] draw,
 	output [9:0] LEDR
+	output reg lose
     );
     
     //1011011100011011000000
@@ -176,11 +181,7 @@ module datapath (
 	// the height control
     reg [4:0] height = 4'b00;
 	 
-	 reg [4:0] start_falling = 5'b0;
-
-	 
-	// press jump will only allow the runner to jump once
-	reg jumpOnce = 1'b0;
+	reg [4:0] start_falling = 5'b0;
 
     // going up or down, add or subtract height by 1
     reg going_up = 1'b1;
@@ -190,7 +191,7 @@ module datapath (
 			count <= rate;
 			height <= 4'b00;
 			going_up <= 1'b1;
-			jumpOnce <= 1'b0;
+			lose <= 1'b0;
 		end
         else if (start) begin
         	count <= rate;
@@ -198,27 +199,34 @@ module datapath (
          	draw <= 160'b0;
 			obstacles[319:0] <= 320'b00000000000000000100000000000100000000001000000000000000001000000000000000000100000000000000010000000000110000000000000000010000000000000000010000000000000001000000000001000000000000100000000000000001000000000000000011000000000000000010000000000000000001000000000000110000000000001100000000000000000100000000000000001100;
 			going_up <= 1'b1;
+			lose <= 1'b0;
         end
 		else begin
             if (count == 28'b0) begin
                 count <= rate;
                 draw = draw << 2;
-					draw[1:0] = obstacles[319:318];
-					obstacles[319:0] = {obstacles[317:0], obstacles[319:318]};
-				// height will change if it is already jumping or jump button
-				// is pushed
-					if (jump) begin
-						start_falling = 5'b1111;
-						going_up = 1'b1;
-						end
-					else if (start_falling > 0)
-						start_falling = start_falling - 1;
-					else 
-						going_up = 1'b0;
-					if (going_up)
-						height = height + 1;
-					else
-						height = height -1;
+				draw[1:0] = obstacles[319:318];
+				obstacles[319:0] = {obstacles[317:0], obstacles[319:318]};
+				// If height reaches ground lose the game
+				if (height == 1'b0) 
+					lose <= 1'b1
+				// Maybe set max height aswell?
+				// Not sure about height of pipes but add a check here to make sure height of bird is inbetween height of pipes
+				if (height < pipe_lower || height > pipe_upper)
+					lose <= 1'b1
+				// height will change if it is already jumping or jump button is pushed
+				if (jump) begin
+					start_falling = 5'b1111;
+					going_up = 1'b1;
+					end
+				else if (start_falling > 0)
+					start_falling = start_falling - 1;
+				else 
+					going_up = 1'b0;
+				if (going_up)
+					height = height + 1;
+				else
+					height = height -1;
 				
 //					if (jump) begin
 //						if (height == 2'b11) 
@@ -230,42 +238,13 @@ module datapath (
 //						if (height == 2'b00) 
 //							going_up = 1'b1;
 //					end
-					draw[322:318] = height;
+				draw[322:318] = height;
 				end
-            else begin
-				
+            else
 				count <= count - 1;
-				/*if (jump) begin
-					if (height == 2'b11) 
-						going_up = 1'b0;
-					if (goinb0g_up) begin
-						if (!jumpOnce)
-							height <= height + 1;
-					end
-					else begin
-						if (!jumpOnce)
-							height <= height - 1;
-					end
-					if (height == 2'b00) begin
-						if (!going_up)
-						//going_up = 1'b1;
-							jumpOnce = 1'b1;
-					endlocal_draw
-					// leftmost two digits of draw used as runner
-					draw[159:158] = height;
-				end
-				else 
-					// runner not jumping
-					draw[159:158] = 2'b00;
-					jumpOnce = 1'b0;
-					going_up = 1'b1;display
-				*/
         end
     end
-	 end
-    
-	assign LEDR[4] = jumpOnce;
-	 
+    	 
     assign LEDR[6] = going_up;
 	 
     assign LEDR[9:8] = height;
