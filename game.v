@@ -121,7 +121,7 @@ module final_project(
 		.hundreds(score_hundreds),
 		.tens(score_tens),
 		.ones(score_ones)
-	)
+	);
 
 	hex_display h0(
 		.IN(score_ones),
@@ -207,12 +207,12 @@ module datapath (
     input move,
     input jump,
     input [27:0] rate,
+	 output reg [325:0] draw,
 	input resetn,
 	output [9:0] LEDR,
 	output reg [7:0] score,
 	output reg lose
     );
-	    
     //1011011100011011000000
     reg [27:0] count;
 	 
@@ -232,14 +232,13 @@ module datapath (
 			count <= rate;
         	height <= 7'd40;
 			going_up <= 1'b1;
-			jumpOnce <= 1'b0;
 			score <= 7'b0;
 			lose <= 1'b0;
 		end
         else if (start) begin
         	count <= rate;
         	height <= 7'd40;
-         	draw <= 160'b0;
+         draw <= 160'b0;
 			obstacles[319:0] <= 320'b00000000000000000100000000000100000000001000000000000000001000000000000000000100000000000000010000000000110000000000000000010000000000000000010000000000000001000000000001000000000000100000000000000001000000000000000011000000000000000010000000000000000001000000000000110000000000001100000000000000000100000000000000001100;
 			going_up <= 1'b1;
 			score <= 7'b0;
@@ -247,9 +246,9 @@ module datapath (
         end
 		else begin
             if (count == 28'b0) begin
-                count <= rate;
+               count <= rate;
 				score <= score + 1;
-                draw = draw << 2;
+            draw = draw << 2;
 				draw[1:0] = obstacles[319:318];
 				obstacles[319:0] = {obstacles[317:0], obstacles[319:318]};
 				// If height reaches ground lose the game
@@ -328,10 +327,9 @@ module display (
 			count <= 3'b000;
 			counter <= 13'b0;
 			local_draw <= floor<<2;
-		end27
-		els27
-			27
-			27
+		end
+		else begin
+			if (counter < 13'd652) begin
 				if (counter < 13'd160) begin
 					// fisrt or second pixel
 					if (counter < 13'd80) 
@@ -352,9 +350,8 @@ module display (
 						// runner part
 						colour = 3'b100;
 				end
-				else 
-				// next 632 counts (158 pixels) to display obstacles 
-				begin
+				else begin
+				// next 632 counts (158 pixels) to display obstacles
 					count = (counter-20) % 8;
 					// x_init starts from 2
 					x <= x_init + count[2];
@@ -398,7 +395,7 @@ module display (
 				counter <= 13'b0;
 				local_draw <= floor << 2;
 			end
-		end27
+		end
 	end
 endmodule
 
