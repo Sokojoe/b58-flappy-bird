@@ -168,7 +168,7 @@ module datapath (
     input [27:0] rate,
 	input resetn,
 	output reg [325:0] draw,
-	output [9:0] LEDR
+	output [9:0] LEDR,
 	output reg lose
     );
     
@@ -179,7 +179,7 @@ module datapath (
 	reg [319:0] obstacles;
 
 	// the height control
-    reg [6:0] height = 4'b00;
+    reg [6:0] height = 7'd40;
 	 
 	reg [4:0] start_falling = 5'b0;
 
@@ -189,13 +189,13 @@ module datapath (
     always@(posedge clk) begin
 		if (!resetn) begin
 			count <= rate;
-			height <= 6'b00;
+        	height <= 7'd40;
 			going_up <= 1'b1;
 			lose <= 1'b0;
 		end
         else if (start) begin
         	count <= rate;
-        	height <= 6'b00;
+        	height <= 7'd40;
          	draw <= 160'b0;
 			obstacles[319:0] <= 320'b00000000000000000100000000000100000000001000000000000000001000000000000000000100000000000000010000000000110000000000000000010000000000000000010000000000000001000000000001000000000000100000000000000001000000000000000011000000000000000010000000000000000001000000000000110000000000001100000000000000000100000000000000001100;
 			going_up <= 1'b1;
@@ -208,12 +208,14 @@ module datapath (
 				draw[1:0] = obstacles[319:318];
 				obstacles[319:0] = {obstacles[317:0], obstacles[319:318]};
 				// If height reaches ground lose the game
-				if (height == 1'b0) 
-					lose <= 1'b1
+				if (height == 7'd0) 
+					lose <= 1'b1;
+				if (height == 7'd80) 
+					lose <= 1'b1;
 				// Maybe set max height aswell?
 				// Not sure about height of pipes but add a check here to make sure height of bird is inbetween height of pipes
 				if (height < obstacles[319:318])
-					lose <= 1'b1
+					lose <= 1'b1;
 				// height will change if it is already jumping or jump button is pushed
 				if (jump) begin
 					start_falling = 5'b1111;
