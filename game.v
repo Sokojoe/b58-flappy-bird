@@ -18,12 +18,14 @@ module final_project(
 		VGA_R,
 		VGA_G,
 		VGA_B,
-		LEDR
+		LEDR,
+		HEX0
 	);
 	
 	input CLOCK_50;
 	input [9:0] SW;
 	input [3:0] KEY;
+	input [7:0] HEX0;
 	
 	output VGA_CLK;
 	output VGA_HS;
@@ -68,7 +70,7 @@ module final_project(
 //   wire [159:0] floor = 120'b0;
     wire [322:0] draw;
 
-    wire start, move;
+    wire start, move, score;
     
     control c(
 	.clk(CLOCK_50),
@@ -88,7 +90,8 @@ module final_project(
 	.rate(rate),
 	.resetn(resetn),
 	.draw(draw),
-	.LEDR(LEDR[9:0])
+	.LEDR(LEDR[9:0]),
+	.score(score)
 	);
 
     display d0(
@@ -99,6 +102,26 @@ module final_project(
 	.y(y),
 	.colour(colour)
 	);
+
+	hex_display h0(
+		.IN(score[3:0]),
+		.OUT(HEX0)
+	)
+
+	hex_display h1(
+		.IN(score[7:4]),
+		.OUT(HEX0)
+	)
+
+	hex_display h2(
+		.IN(score[11:8]),
+		.OUT(HEX0)
+	)
+
+	hex_display h3(
+		.IN(score[15:12]),
+		.OUT(HEX0)
+	)
 endmodule
 
 
@@ -164,7 +187,8 @@ module datapath (
     input [27:0] rate,
 	input resetn,
 	output reg [322:0] draw,
-	output [9:0] LEDR
+	output [9:0] LEDR,
+	output [27:0] score
     );
 	
 	reg [27:0] score = 14'b0;
@@ -205,7 +229,7 @@ module datapath (
 		else begin
             if (count == 28'b0) begin
                 count <= rate;
-		score = score + 1;
+				score = score + 1;
                 draw = draw << 2;
 					draw[1:0] = obstacles[319:318];
 					obstacles[319:0] = {obstacles[317:0], obstacles[319:318]};
@@ -377,5 +401,35 @@ module display (
 				local_draw <= floor << 2;
 			end
 		end
+	end
+endmodule
+
+module hex_display(IN, OUT);
+    input [3:0] IN;
+	 output reg [7:0] OUT;
+	 
+	 always @(*)
+	 begin
+		case(IN[3:0])
+			4'b0000: OUT = 7'b1000000;
+			4'b0001: OUT = 7'b1111001;
+			4'b0010: OUT = 7'b0100100;
+			4'b0011: OUT = 7'b0110000;
+			4'b0100: OUT = 7'b0011001;
+			4'b0101: OUT = 7'b0010010;
+			4'b0110: OUT = 7'b0000010;
+			4'b0111: OUT = 7'b1111000;
+			4'b1000: OUT = 7'b0000000;
+			4'b1001: OUT = 7'b0011000;
+			4'b1010: OUT = 7'b0001000;
+			4'b1011: OUT = 7'b0000011;
+			4'b1100: OUT = 7'b1000110;
+			4'b1101: OUT = 7'b0100001;
+			4'b1110: OUT = 7'b0000110;
+			4'b1111: OUT = 7'b0001110;
+			
+			default: OUT = 7'b0111111;
+		endcase
+
 	end
 endmodule
