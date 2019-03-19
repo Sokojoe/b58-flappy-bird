@@ -166,6 +166,8 @@ module datapath (
 	output reg [322:0] draw,
 	output [9:0] LEDR
     );
+	
+	reg [27:0] score = 14'b0;
     
     //1011011100011011000000
     reg [27:0] count;
@@ -191,6 +193,7 @@ module datapath (
 			height <= 4'b00;
 			going_up <= 1'b1;
 			jumpOnce <= 1'b0;
+			score <= 0'b14;
 		end
         else if (start) begin
         	count <= rate;
@@ -202,6 +205,7 @@ module datapath (
 		else begin
             if (count == 28'b0) begin
                 count <= rate;
+		score = score + 1;
                 draw = draw << 2;
 					draw[1:0] = obstacles[319:318];
 					obstacles[319:0] = {obstacles[317:0], obstacles[319:318]};
