@@ -28,10 +28,10 @@ module final_project(
 	input CLOCK_50;
 	input [9:0] SW;
 	input [3:0] KEY;
-	input [7:0] HEX0;
-	input [7:0] HEX1;
-	input [7:0] HEX2;
-	input [7:0] HEX3;
+	output [7:0] HEX0;
+	output [7:0] HEX1;
+	output [7:0] HEX2;
+	output [7:0] HEX3;
 
 	
 	output VGA_CLK;
@@ -74,7 +74,10 @@ module final_project(
 		
 //    wire [319:0] new_array = 320'b00000000001000000000010000000001000000000010000000000000000010000000000000000001000000000000000100000000001100000000000000000100000000000000000100000000000000010000000000010000000000001000000000000000010000000000000000110000000000000000100000000000000000010000000000001100000000000011000000000000000001000000000000000011;
     wire [27:0] rate = 28'b0000001011011100011011000000;
-	 wire [27:0] score;
+	 wire [7:0] score;
+	 wire [3:0] score_hundreds;
+	 wire [3:0] score_tens;
+	 wire [3:0] score_ones;
 //   wire [159:0] floor = 120'b0;
     wire [325:0] draw;
 
@@ -111,25 +114,32 @@ module final_project(
 	.colour(colour)
 	);
 
+	bcd b0(
+		.number(score),
+		.hundreds(score_hundreds),
+		.tens(score_tens),
+		.ones(score_ones)
+	)
+
 	hex_display h0(
-		.IN(score[3:0]),
+		.IN(score_ones),
 		.OUT(HEX0)
 	);
 
 	hex_display h1(
-		.IN(score[7:4]),
+		.IN(score_tens),
 		.OUT(HEX1)
 	);
 
 	hex_display h2(
-		.IN(score[11:8]),
+		.IN(score_hundreds),
 		.OUT(HEX2)
 	);
 
-	hex_display h3(
-		.IN(score[15:12]),
-		.OUT(HEX3)
-	);
+	// hex_display h3(
+	// 	.IN(score[15:12]),
+	// 	.OUT(HEX3)
+	// );
 endmodule
 
 
@@ -195,7 +205,7 @@ module datapath (
     input [27:0] rate,
 	input resetn,
 	output [9:0] LEDR,
-	output reg [27:0] score,
+	output reg [7:0] score,
 	output reg [325:0] draw
     );
 	    
@@ -223,7 +233,7 @@ module datapath (
 			height <= 6'b00;
 			going_up <= 1'b1;
 			jumpOnce <= 1'b0;
-			score <= 14'b0;
+			score <= 7'b0;
 		end
         else if (start) begin
         	count <= rate;
@@ -231,12 +241,12 @@ module datapath (
          	draw <= 160'b0;
 			obstacles[319:0] <= 320'b00000000000000000100000000000100000000001000000000000000001000000000000000000100000000000000010000000000110000000000000000010000000000000000010000000000000001000000000001000000000000100000000000000001000000000000000011000000000000000010000000000000000001000000000000110000000000001100000000000000000100000000000000001100;
 			going_up <= 1'b1;
-			score <= 14'b0;
+			score <= 7'b0;
         end
 		else begin
             if (count == 28'b0) begin
                 count <= rate;
-				score = score + 1;
+				score <= score + 1;
                 draw = draw << 2;
 					draw[1:0] = obstacles[319:318];
 					obstacles[319:0] = {obstacles[317:0], obstacles[319:318]};
@@ -337,10 +347,10 @@ module display (
 			count <= 3'b000;
 			counter <= 13'b0;
 			local_draw <= floor<<2;
-		end
-		else begin
-			if (counter < 13'd652) begin
-				// fisrt 40 counts used to display runner
+		end27
+		els27
+			27
+			27
 				if (counter < 13'd160) begin
 					// fisrt or second pixel
 					if (counter < 13'd80) 
@@ -407,7 +417,7 @@ module display (
 				counter <= 13'b0;
 				local_draw <= floor << 2;
 			end
-		end
+		end27
 	end
 endmodule
 
@@ -439,4 +449,44 @@ module hex_display(IN, OUT);
 		endcase
 
 	end
+endmodule
+
+module bcd(number, hundreds, tens, ones);
+   // I/O Signal Definitions
+   input  [7:0] number;
+   output reg [3:0] hundreds;
+   output reg [3:0] tens;
+   output reg [3:0] ones;
+   
+   // Internal variable for storing bits
+   reg [19:0] shift;
+   integer i;
+   
+   always @(number)
+   begin
+      // Clear previous number and store new number in shift register
+      shift[19:8] = 0;
+      shift[7:0] = number;
+      
+      // Loop eight times
+      for (i=0; i<8; i=i+1) begin
+         if (shift[11:8] >= 5)
+            shift[11:8] = shift[11:8] + 3;
+            
+         if (shift[15:12] >= 5)
+            shift[15:12] = shift[15:12] + 3;
+            
+         if (shift[19:16] >= 5)
+            shift[19:16] = shift[19:16] + 3;
+         
+         // Shift entire register left once
+         shift = shift << 1;
+      end
+      
+      // Push decimal numbers to output
+      hundreds = shift[19:16];
+      tens     = shift[15:12];
+      ones     = shift[11:8];
+   end
+ 
 endmodule
