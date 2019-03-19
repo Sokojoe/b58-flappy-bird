@@ -28,10 +28,10 @@ module final_project(
 	input CLOCK_50;
 	input [9:0] SW;
 	input [3:0] KEY;
-	input [7:0] HEX0;
-	input [7:0] HEX1;
-	input [7:0] HEX2;
-	input [7:0] HEX3;
+	output [7:0] HEX0;
+	output [7:0] HEX1;
+	output [7:0] HEX2;
+	output [7:0] HEX3;
 
 	
 	output VGA_CLK;
