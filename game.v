@@ -18,12 +18,21 @@ module final_project(
 		VGA_R,
 		VGA_G,
 		VGA_B,
-		LEDR
+		LEDR,
+		HEX0,
+		HEX1,
+		HEX2,
+		HEX3
 	);
 	
 	input CLOCK_50;
 	input [9:0] SW;
 	input [3:0] KEY;
+	output [7:0] HEX0;
+	output [7:0] HEX1;
+	output [7:0] HEX2;
+	output [7:0] HEX3;
+
 	
 	output VGA_CLK;
 	output VGA_HS;
@@ -65,10 +74,11 @@ module final_project(
 		
 //    wire [319:0] new_array = 320'b00000000001000000000010000000001000000000010000000000000000010000000000000000001000000000000000100000000001100000000000000000100000000000000000100000000000000010000000000010000000000001000000000000000010000000000000000110000000000000000100000000000000000010000000000001100000000000011000000000000000001000000000000000011;
     wire [27:0] rate = 28'b0000001011011100011011000000;
+	 wire [27:0] score;
 //   wire [159:0] floor = 120'b0;
     wire [325:0] draw;
 
-    wire start, move;
+    wire start, move, lose;
     
     control c(
 	.clk(CLOCK_50),
@@ -76,7 +86,8 @@ module final_project(
 	.stop(~KEY[1]),
     .start(start),
 	.resetn(resetn),
-	.move(move)
+	.move(move),
+	.lose(lose)
 	);
 
     // key 3 used as jump button
@@ -88,7 +99,9 @@ module final_project(
 	.rate(rate),
 	.resetn(resetn),
 	.draw(draw),
-	.LEDR(LEDR[9:0])
+	.LEDR(LEDR[9:0]),
+	.score(score),
+	.lose(lose)
 	);
 
     display d0(
@@ -99,6 +112,26 @@ module final_project(
 	.y(y),
 	.colour(colour)
 	);
+
+	hex_display h0(
+		.IN(score[3:0]),
+		.OUT(HEX0)
+	);
+
+	hex_display h1(
+		.IN(score[7:4]),
+		.OUT(HEX1)
+	);
+
+	hex_display h2(
+		.IN(score[11:8]),
+		.OUT(HEX2)
+	);
+
+	hex_display h3(
+		.IN(score[15:12]),
+		.OUT(HEX3)
+	);
 endmodule
 
 
@@ -107,6 +140,7 @@ module control(
 	input go,
 	input stop,
 	input resetn,
+	input lose,
 	output reg start,
 	output reg move
 	);
@@ -118,12 +152,13 @@ module control(
 		  S_MOVE  = 5'd2,
 		  S_STOP  = 5'd3;
 	
+	// Add to state table lose => S_READY
 	always@(*)
 	begin: state_table
 		case (cur)
 			S_READY: next = go ? S_READY_WAIT : S_READY;
 			S_READY_WAIT: next = S_MOVE;
-			S_MOVE: next = stop ? S_STOP : S_MOVE;
+			S_MOVE: next = stop ? S_STOP : (lose ? S_READY : S_MOVE);
 			S_STOP: next = S_READY;
 			default: next = S_READY;
 		endcase
@@ -163,10 +198,12 @@ module datapath (
     input jump,
     input [27:0] rate,
 	input resetn,
+	output [9:0] LEDR,
+	output reg [27:0] score,
 	output reg [325:0] draw,
-	output [9:0] LEDR
+	output reg lose
     );
-    
+	    
     //1011011100011011000000
     reg [27:0] count;
 	 
@@ -174,13 +211,9 @@ module datapath (
 	reg [319:0] obstacles;
 
 	// the height control
-    reg [6:0] height = 4'b00;
+    reg [6:0] height = 7'd40;
 	 
-	 reg [4:0] start_falling = 5'b0;
-
-	 
-	// press jump will only allow the runner to jump once
-	reg jumpOnce = 1'b0;
+	reg [4:0] start_falling = 5'b0;
 
     // going up or down, add or subtract height by 1
     reg going_up = 1'b1;
@@ -188,37 +221,49 @@ module datapath (
     always@(posedge clk) begin
 		if (!resetn) begin
 			count <= rate;
-			height <= 6'b00;
+        	height <= 7'd40;
 			going_up <= 1'b1;
-			jumpOnce <= 1'b0;
+			score <= 14'b0;
+			lose <= 1'b0;
 		end
         else if (start) begin
         	count <= rate;
-        	height <= 6'b00;
+        	height <= 7'd40;
          	draw <= 160'b0;
 			obstacles[319:0] <= 320'b00000000000000000100000000000100000000001000000000000000001000000000000000000100000000000000010000000000110000000000000000010000000000000000010000000000000001000000000001000000000000100000000000000001000000000000000011000000000000000010000000000000000001000000000000110000000000001100000000000000000100000000000000001100;
 			going_up <= 1'b1;
+			score <= 14'b0;
+			lose <= 1'b0;
         end
 		else begin
             if (count == 28'b0) begin
                 count <= rate;
+				score = score + 1;
                 draw = draw << 2;
-					draw[1:0] = obstacles[319:318];
-					obstacles[319:0] = {obstacles[317:0], obstacles[319:318]};
-				// height will change if it is already jumping or jump button
-				// is pushed
-					if (jump) begin
-						start_falling = 5'b1111;
-						going_up = 1'b1;
-						end
-					else if (start_falling > 0)
-						start_falling = start_falling - 1;
-					else 
-						going_up = 1'b0;
-					if (going_up)
-						height = height + 1;
-					else
-						height = height -1;
+				draw[1:0] = obstacles[319:318];
+				obstacles[319:0] = {obstacles[317:0], obstacles[319:318]};
+				// If height reaches ground lose the game
+				if (height == 7'd0) 
+					lose <= 1'b1;
+				if (height == 7'd80) 
+					lose <= 1'b1;
+				// Maybe set max height aswell?
+				// Not sure about height of pipes but add a check here to make sure height of bird is inbetween height of pipes
+				if (height < obstacles[319:318])
+					lose <= 1'b1;
+				// height will change if it is already jumping or jump button is pushed
+				if (jump) begin
+					start_falling = 5'b1111;
+					going_up = 1'b1;
+					end
+				else if (start_falling > 0)
+					start_falling = start_falling - 1;
+				else 
+					going_up = 1'b0;
+				if (going_up)
+					height = height + 1;
+				else
+					height = height -1;
 				
 //					if (jump) begin
 //						if (height == 2'b11) 
@@ -232,40 +277,11 @@ module datapath (
 //					end
 					draw[324:318] = height;
 				end
-            else begin
-				
+            else
 				count <= count - 1;
-				/*if (jump) begin
-					if (height == 2'b11) 
-						going_up = 1'b0;
-					if (goinb0g_up) begin
-						if (!jumpOnce)
-							height <= height + 1;
-					end
-					else begin
-						if (!jumpOnce)
-							height <= height - 1;
-					end
-					if (height == 2'b00) begin
-						if (!going_up)
-						//going_up = 1'b1;
-							jumpOnce = 1'b1;
-					endlocal_draw
-					// leftmost two digits of draw used as runner
-					draw[159:158] = height;
-				end
-				else 
-					// runner not jumping
-					draw[159:158] = 2'b00;
-					jumpOnce = 1'b0;
-					going_up = 1'b1;display
-				*/
         end
     end
-	 end
-    
-	assign LEDR[4] = jumpOnce;
-	 
+    	 
     assign LEDR[6] = going_up;
 	 
     assign LEDR[9:8] = height;
@@ -373,5 +389,35 @@ module display (
 				local_draw <= floor << 2;
 			end
 		end
+	end
+endmodule
+
+module hex_display(IN, OUT);
+    input [3:0] IN;
+	 output reg [7:0] OUT;
+	 
+	 always @(*)
+	 begin
+		case(IN[3:0])
+			4'b0000: OUT = 7'b1000000;
+			4'b0001: OUT = 7'b1111001;
+			4'b0010: OUT = 7'b0100100;
+			4'b0011: OUT = 7'b0110000;
+			4'b0100: OUT = 7'b0011001;
+			4'b0101: OUT = 7'b0010010;
+			4'b0110: OUT = 7'b0000010;
+			4'b0111: OUT = 7'b1111000;
+			4'b1000: OUT = 7'b0000000;
+			4'b1001: OUT = 7'b0011000;
+			4'b1010: OUT = 7'b0001000;
+			4'b1011: OUT = 7'b0000011;
+			4'b1100: OUT = 7'b1000110;
+			4'b1101: OUT = 7'b0100001;
+			4'b1110: OUT = 7'b0000110;
+			4'b1111: OUT = 7'b0001110;
+			
+			default: OUT = 7'b0111111;
+		endcase
+
 	end
 endmodule
