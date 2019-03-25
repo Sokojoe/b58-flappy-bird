@@ -401,70 +401,71 @@ endmodule
 
 module hex_display(IN, OUT);
     input [3:0] IN;
-	 output reg [7:0] OUT;
-	 
-	 always @(*)
-	 begin
-		case(IN[3:0])
-			4'b0000: OUT = 7'b1000000;
-			4'b0001: OUT = 7'b1111001;
-			4'b0010: OUT = 7'b0100100;
-			4'b0011: OUT = 7'b0110000;
-			4'b0100: OUT = 7'b0011001;
-			4'b0101: OUT = 7'b0010010;
-			4'b0110: OUT = 7'b0000010;
-			4'b0111: OUT = 7'b1111000;
-			4'b1000: OUT = 7'b0000000;
-			4'b1001: OUT = 7'b0011000;
-			4'b1010: OUT = 7'b0001000;
-			4'b1011: OUT = 7'b0000011;
-			4'b1100: OUT = 7'b1000110;
-			4'b1101: OUT = 7'b0100001;
-			4'b1110: OUT = 7'b0000110;
-			4'b1111: OUT = 7'b0001110;
-			
-			default: OUT = 7'b0111111;
-		endcase
+	output reg [7:0] OUT;
+	
+	always @(*)
+	begin
+	case(IN[3:0])
+		4'b0000: OUT = 7'b1000000;
+		4'b0001: OUT = 7'b1111001;
+		4'b0010: OUT = 7'b0100100;
+		4'b0011: OUT = 7'b0110000;
+		4'b0100: OUT = 7'b0011001;
+		4'b0101: OUT = 7'b0010010;
+		4'b0110: OUT = 7'b0000010;
+		4'b0111: OUT = 7'b1111000;
+		4'b1000: OUT = 7'b0000000;
+		4'b1001: OUT = 7'b0011000;
+		4'b1010: OUT = 7'b0001000;
+		4'b1011: OUT = 7'b0000011;
+		4'b1100: OUT = 7'b1000110;
+		4'b1101: OUT = 7'b0100001;
+		4'b1110: OUT = 7'b0000110;
+		4'b1111: OUT = 7'b0001110;
+		
+		default: OUT = 7'b0111111;
+	endcase
 
 	end
 endmodule
 
 module bcd(number, hundreds, tens, ones);
-   // I/O Signal Definitions
-   input  [7:0] number;
+   input  [13:0] number;
+   output reg [3:0] thousands;
    output reg [3:0] hundreds;
    output reg [3:0] tens;
    output reg [3:0] ones;
    
-   // Internal variable for storing bits
-   reg [19:0] shift;
+   reg [29:0] shift;
    integer i;
    
    always @(number)
    begin
-      // Clear previous number and store new number in shift register
-      shift[19:8] = 0;
-      shift[7:0] = number;
+      shift[29:14] = 0;
+      shift[13:0]  = number;
       
-      // Loop eight times
-      for (i=0; i<8; i=i+1) begin
-         if (shift[11:8] >= 5)
-            shift[11:8] = shift[11:8] + 3;
+      for (i=0; i<14; i=i+1) begin
+         if (shift[17:14] >= 5)
+            shift[17:14] = shift[17:14] + 3;
             
-         if (shift[15:12] >= 5)
-            shift[15:12] = shift[15:12] + 3;
+         if (shift[21:18] >= 5)
+            shift[21:18] = shift[21:18] + 3;
             
-         if (shift[19:16] >= 5)
-            shift[19:16] = shift[19:16] + 3;
+         if (shift[25:22] >= 5)
+            shift[25:22] = shift[25:22] + 3;
+
+		if (shift[29:26] >= 5)
+			shift[29:26] = shift[29:26] + 3;
          
          // Shift entire register left once
          shift = shift << 1;
       end
       
       // Push decimal numbers to output
-      hundreds = shift[19:16];
-      tens     = shift[15:12];
-      ones     = shift[11:8];
+	  thousands = shift[29:26];
+      hundreds  = shift[25:22];
+      tens      = shift[21:18];
+      ones      = shift[17:14];
    end
  
 endmodule
