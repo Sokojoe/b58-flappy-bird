@@ -110,9 +110,19 @@ module final_project(
 	.resetn(resetn),
 	.x(x),
 	.y(y),
-	.colour(colour)
+	.colour(colour),
+	.counter(counter)
 	);
 
+	renderPipes d1(
+	.local_draw(local_draw),
+	.counter(counter),
+	.clk(CLOCK_50),
+	.x(x),
+	.y(y),
+	.colour(colour)
+	);
+	
 	hex_display h0(
 		.IN(score[3:0]),
 		.OUT(HEX0)
@@ -121,7 +131,7 @@ module final_project(
 	hex_display h1(
 		.IN(score[7:4]),
 		.OUT(HEX1)
-	);
+	);	
 
 	hex_display h2(
 		.IN(score[11:8]),
@@ -196,7 +206,7 @@ module datapath (
     input start,
     input move,
     input jump,
-    input [27:0] rate,
+    input [27:0] rate,	
 	input resetn,
 	output [9:0] LEDR,
 	output reg [27:0] score,
@@ -228,8 +238,8 @@ module datapath (
         else if (start) begin
         	count <= rate;
         	height <= 7'd40;
-         	draw <= 1112'b0;
-			obstacles[1105:0] <= 1106'b 0000000 0000000 0000000 0000000 0000000 0000000 0000000 1100000 0000000 0000000 0000000 0000000 1110010 0000000 0000000 0000000 1111000 0000000 0000000 0000000 0000000 0000000 0000000 110100 0000000 0000000 0000000 0000000 0000000 1110100 0000000 0000000 0000000 0000000 0101000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000 0000000;
+         draw <= 1112'b0;
+			obstacles[1105:0] <= 1106'b0000000_0000000_0000000_0000000_0000000_0000000_0000000_1100000_0000000_0000000_0000000_0000000_1110010_0000000_0000000_0000000_1111000_0000000_0000000_0000000_0000000_0000000_0000000_110100_0000000_0000000_0000000_0000000_0000000_1110100_0000000_0000000_0000000_0000000_0101000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000_0000000;
 			going_up <= 1'b1;
 			score <= 14'b0;
 			lose <= 1'b0;
@@ -253,7 +263,7 @@ module datapath (
 				// height will change if it is already jumping or jump button is pushed
 				if (jump) begin
 					start_falling = 5'b1111;
-					going_up = 1'b1;
+					going_up = 1'b1;			
 					end
 				else if (start_falling > 0)
 					start_falling = start_falling - 1;
@@ -280,16 +290,16 @@ endmodule
 module display (
     input [1112:0] floor,
     input clk,
-	input resetn,
+	 input resetn,
     output reg [7:0] x,
     output reg [6:0] y,
-    output reg [2:0] colour
+    output reg [2:0] colour,
+	 output reg [15:0] counter
     );
     
-    // initialization
-    reg [7:0] x_init= 8'd2;
-    reg [8:0] y_init = 9'd84;
-	reg [15:0] counter = 15'b0;
+   // initialization
+   reg [7:0] x_init= 8'd2;
+   reg [8:0] y_init = 9'd84;
 
 	// counts from 0 to 19 for the first two pixel for the runner
 	reg [8:0] runner_count = 9'b0;
@@ -297,22 +307,13 @@ module display (
 
 	// copy of floor value, will do left shift on local value
 	reg [1112:0] local_draw;
-    
-	renderPipes d1(
-	.local_draw(local_draw),
-	counter(counter),
-	.x(x),
-	.y(y),
-	.colour(colour)
-	);
+   
 
     always@(posedge clk) begin
 		if (!resetn) begin
 			x_init <= 8'd2;
-			y_init <= 9'd84;
-			count <= 3'b000;
+			y_init <= 9'd84;		
 			counter <= 15'b0;
-			local_draw <= floor<<7;
 		end
 		else begin
 			if (counter < 15'd12800) begin
@@ -342,7 +343,6 @@ module display (
 			else begin 
 				x_init <= 8'd2;
 				y_init <= 9'd84;
-				count <= 3'b000;
 				counter <= 13'b0;
 				local_draw <= floor << 7;
 			end
@@ -351,42 +351,52 @@ module display (
 endmodule
 
 module renderPipes (
-    input [1105:0] local_draw,
-	input [15:0] counter,
+    input [1105:0] draw,
+	 input [15:0] counter,
+    input clk,
     output reg [7:0] x,
     output reg [6:0] y,
     output reg [2:0] colour
     );
+	 
+   reg [7:0] x_init = 8'd2;
+	reg [8:0] y_init = 9'd84;
+	reg [7:0] y_pixel;
+	reg [7:0] pipe_height;
+	reg [1105:0] local_draw;
 
-	reg [2:0] count = 3'b000;
+   always@(posedge clk) begin
 
-	if (counter < 15'd12800) begin
-		count = (counter-160) % 320;
-		if (count < 80)
-			x <= x_init
-		if (count < 160)
-			x <= x_init + 1
-		if (count < 240)
-			x <= x_init + 2
-		if (count < 320)
-			x <= x_init + 3
+		reg [2:0] count = 3'b000;
 
-		y_pixel = count % 80
-		y <= y_init - y_pixel
-		pipe_height = 
-		if (y_pixel < pipe_height || y_pixel > pipe_height + 4'd12)
-			colour = 3'b110;
-		else 
-			colour = 3'b011
+		if (counter < 15'd12800) begin
+			count = (counter-160) % 320;
+			if (count < 80)
+				x <= x_init;
+			if (count < 160)
+				x <= x_init + 1;
+			if (count < 240)
+				x <= x_init + 2;
+			if (count < 320)
+				x <= x_init + 3;
 
-		if (pipe_height == 7'd0) 
-			colour = 3'b011
+			y_pixel = count % 80;
+			y <= y_init - y_pixel;
+			pipe_height = local_draw[1105:1098];
+			if (y_pixel < pipe_height || y_pixel > pipe_height + 4'd12)
+				colour = 3'b110;
+			else 
+				colour = 3'b011;
 
-		if (count == 15'd320) begin
-			x_init <= x_init + 4
-			local_draw <= local_draw << 7
-		end
-	end	
+			if (pipe_height == 7'd0) 
+				colour = 3'b011;
+
+			if (count == 15'd320) begin
+				x_init <= x_init + 4;
+				local_draw <= local_draw << 7;
+			end
+		end	
+	end
 endmodule
 
 module hex_display(IN, OUT);
