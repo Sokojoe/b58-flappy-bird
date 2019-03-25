@@ -114,14 +114,14 @@ module final_project(
 	.counter(counter)
 	);
 
-	renderPipes d1(
-	.local_draw(local_draw),
-	.counter(counter),
-	.clk(CLOCK_50),
-	.x(x),
-	.y(y),
-	.colour(colour)
-	);
+//	renderPipes d1(
+//	.local_draw(local_draw),
+//	.counter(counter),
+//	.clk(CLOCK_50),
+//	.x(x),
+//	.y(y),
+//	.colour(colour)
+//	);
 	
 	hex_display h0(
 		.IN(score[3:0]),
@@ -307,7 +307,10 @@ module display (
 
 	// copy of floor value, will do left shift on local value
 	reg [1112:0] local_draw;
-   
+	
+	reg [7:0] y_pixel;
+	reg [7:0] pipe_height;  
+	reg [8:0] count;
 
     always@(posedge clk) begin
 		if (!resetn) begin
@@ -337,7 +340,34 @@ module display (
 					else 
 						// runner part
 						colour = 3'b100;
-				end				
+				end 
+				else begin
+					count = (counter-160) % 320;
+					if (count < 80)
+						x <= x_init;
+					if (count < 160)
+						x <= x_init + 1;
+					if (count < 240)
+						x <= x_init + 2;
+					if (count < 320)
+						x <= x_init + 3;
+
+					y_pixel = count % 80;
+					y <= y_init - y_pixel;
+					pipe_height = local_draw[1105:1098];
+					if (y_pixel < pipe_height || y_pixel > pipe_height + 4'd12)
+						colour = 3'b110;
+					else 
+						colour = 3'b011;
+
+					if (pipe_height == 7'd0) 
+						colour = 3'b011;
+
+					if (count == 15'd320) begin
+						x_init <= x_init + 4;
+						local_draw <= local_draw << 7;
+					end
+				end
 				counter = counter + 1;
 			end
 			else begin 
@@ -350,54 +380,54 @@ module display (
 	end
 endmodule
 
-module renderPipes (
-    input [1105:0] draw,
-	 input [15:0] counter,
-    input clk,
-    output reg [7:0] x,
-    output reg [6:0] y,
-    output reg [2:0] colour
-    );
-	 
-   reg [7:0] x_init = 8'd2;
-	reg [8:0] y_init = 9'd84;
-	reg [7:0] y_pixel;
-	reg [7:0] pipe_height;
-	reg [1105:0] local_draw;
-
-   always@(posedge clk) begin
-
-		reg [2:0] count = 3'b000;
-
-		if (counter < 15'd12800) begin
-			count = (counter-160) % 320;
-			if (count < 80)
-				x <= x_init;
-			if (count < 160)
-				x <= x_init + 1;
-			if (count < 240)
-				x <= x_init + 2;
-			if (count < 320)
-				x <= x_init + 3;
-
-			y_pixel = count % 80;
-			y <= y_init - y_pixel;
-			pipe_height = local_draw[1105:1098];
-			if (y_pixel < pipe_height || y_pixel > pipe_height + 4'd12)
-				colour = 3'b110;
-			else 
-				colour = 3'b011;
-
-			if (pipe_height == 7'd0) 
-				colour = 3'b011;
-
-			if (count == 15'd320) begin
-				x_init <= x_init + 4;
-				local_draw <= local_draw << 7;
-			end
-		end	
-	end
-endmodule
+//module renderPipes (
+//    input [1105:0] draw,
+//	 input [15:0] counter,
+//    input clk,
+//    output reg [7:0] x,
+//    output reg [6:0] y,
+//    output reg [2:0] colour
+//    );
+//	 
+//   reg [7:0] x_init = 8'd2;
+//	reg [8:0] y_init = 9'd84;
+//	reg [7:0] y_pixel;
+//	reg [7:0] pipe_height;
+//	reg [1105:0] local_draw;
+//
+//   always@(posedge clk) begin
+//
+//		reg [2:0] count = 3'b000;
+//
+//		if (counter < 15'd12800) begin
+//			count = (counter-160) % 320;
+//			if (count < 80)
+//				x <= x_init;
+//			if (count < 160)
+//				x <= x_init + 1;
+//			if (count < 240)
+//				x <= x_init + 2;
+//			if (count < 320)
+//				x <= x_init + 3;
+//
+//			y_pixel = count % 80;
+//			y <= y_init - y_pixel;
+//			pipe_height = local_draw[1105:1098];
+//			if (y_pixel < pipe_height || y_pixel > pipe_height + 4'd12)
+//				colour = 3'b110;
+//			else 
+//				colour = 3'b011;
+//
+//			if (pipe_height == 7'd0) 
+//				colour = 3'b011;
+//
+//			if (count == 15'd320) begin
+//				x_init <= x_init + 4;
+//				local_draw <= local_draw << 7;
+//			end
+//		end	
+//	end
+//endmodule
 
 module hex_display(IN, OUT);
     input [3:0] IN;
