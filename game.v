@@ -47,7 +47,7 @@ module final_project(
 	wire [2:0] colour;
 	wire [7:0] x;
 	wire [6:0] y;
-	
+
 	wire resetn = KEY[0]; 
 	//wire writeEn = ~KEY[1];
 	
@@ -73,10 +73,12 @@ module final_project(
 		defparam VGA.BACKGROUND_IMAGE = "black.mif";
 		
 //    wire [319:0] new_array = 320'b00000000001000000000010000000001000000000010000000000000000010000000000000000001000000000000000100000000001100000000000000000100000000000000000100000000000000010000000000010000000000001000000000000000010000000000000000110000000000000000100000000000000000010000000000001100000000000011000000000000000001000000000000000011;
-    wire [27:0] rate = 28'b0000001011011100011011000000;
+    
 	 wire [27:0] score;
 //   wire [159:0] floor = 120'b0;
     wire [325:0] draw;
+    wire [27:0] rate;
+
 
     wire start, move, lose;
     
@@ -113,6 +115,15 @@ module final_project(
 	.colour(colour)
 	);
 
+	
+	difficultySwitch diffSw(
+		.sel(SW[1:0]),
+		.rate(rate)
+	);
+	
+	
+		
+		
 	hex_display h0(
 		.IN(score[3:0]),
 		.OUT(HEX0)
@@ -134,6 +145,20 @@ module final_project(
 	);
 endmodule
 
+module difficultySwitch(
+	input [1:0] sel,
+	output [27:0] rate
+	);
+	
+	always @(*) begin
+		case(sel)
+			2'b00: rate = 28'b0000000101101110001101100000;
+			2'b01: rate = 28'b0000001011011100011011000000;
+			2'b10: rate = 28'b0000010110111000110110000000;
+			2'b11: rate = 28'b0000101101110001101100000000;
+		endcase
+	end
+endmodule
 
 module control(
 	input clk,
