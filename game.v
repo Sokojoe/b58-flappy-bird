@@ -74,7 +74,8 @@ module final_project(
 		
 //    wire [319:0] new_array = 320'b00000000001000000000010000000001000000000010000000000000000010000000000000000001000000000000000100000000001100000000000000000100000000000000000100000000000000010000000000010000000000001000000000000000010000000000000000110000000000000000100000000000000000010000000000001100000000000011000000000000000001000000000000000011;
     wire [27:0] rate = 28'b0000001011011100011011000000;
-	 wire [7:0] score;
+	 wire [13:0] score;
+	 wire [3:0] score_thousands;
 	 wire [3:0] score_hundreds;
 	 wire [3:0] score_tens;
 	 wire [3:0] score_ones;
@@ -118,6 +119,7 @@ module final_project(
 
 	bcd b0(
 		.number(score),
+		.thousands(score_thousands),
 		.hundreds(score_hundreds),
 		.tens(score_tens),
 		.ones(score_ones)
@@ -138,10 +140,10 @@ module final_project(
 		.OUT(HEX2)
 	);
 
-	// hex_display h3(
-	// 	.IN(score[15:12]),
-	// 	.OUT(HEX3)
-	// );
+	 hex_display h3(
+		.IN(score_thousands),
+		.OUT(HEX3)
+	);
 endmodule
 
 
@@ -210,7 +212,7 @@ module datapath (
 	 output reg [325:0] draw,
 	input resetn,
 	output [9:0] LEDR,
-	output reg [7:0] score,
+	output reg [13:0] score,
 	output reg lose
     );
     //1011011100011011000000
@@ -232,7 +234,7 @@ module datapath (
 			count <= rate;
         	height <= 7'd40;
 			going_up <= 1'b1;
-			score <= 7'b0;
+			score <= 13'b0;
 			lose <= 1'b0;
 		end
         else if (start) begin
@@ -241,7 +243,7 @@ module datapath (
          draw <= 160'b0;
 			obstacles[319:0] <= 320'b00000000000000000100000000000100000000001000000000000000001000000000000000000100000000000000010000000000110000000000000000010000000000000000010000000000000001000000000001000000000000100000000000000001000000000000000011000000000000000010000000000000000001000000000000110000000000001100000000000000000100000000000000001100;
 			going_up <= 1'b1;
-			score <= 7'b0;
+			score <= 13'b0;
 			lose <= 1'b0;
         end
 		else begin
