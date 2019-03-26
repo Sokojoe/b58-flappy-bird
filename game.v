@@ -147,15 +147,15 @@ endmodule
 
 module difficultySwitch(
 	input [1:0] sel,
-	output [27:0] rate
+	output reg [27:0] rate
 	);
 	
 	always @(*) begin
 		case(sel)
-			2'b00: rate = 28'b0000000101101110001101100000;
-			2'b01: rate = 28'b0000001011011100011011000000;
-			2'b10: rate = 28'b0000010110111000110110000000;
-			2'b11: rate = 28'b0000101101110001101100000000;
+			2'b00: rate = 28'd1500000; //normal
+			2'b01: rate = 28'd1000000; //hard
+			2'b10: rate = 28'd800000;  //hardest
+			2'b11: rate = 28'd5000000; //debug (super slow)
 		endcase
 	end
 endmodule
