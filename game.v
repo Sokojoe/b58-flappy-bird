@@ -1,11 +1,3 @@
-/*
- * Dot Runner
- * CSCB58 Winter 2017 Final Project 
- * Team members:
- * 	Changyu Bi
- *	Jiachen He
- */
-
 module final_project(
 		CLOCK_50,
 		KEY,
@@ -431,7 +423,7 @@ module hex_display(IN, OUT);
 	end
 endmodule
 
-module bcd(number, hundreds, tens, ones);
+module bcd(number, thousands, hundreds, tens, ones);
    input  [13:0] number;
    output reg [3:0] thousands;
    output reg [3:0] hundreds;
