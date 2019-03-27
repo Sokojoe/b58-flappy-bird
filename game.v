@@ -1,11 +1,3 @@
-/*
- * Dot Runner
- * CSCB58 Winter 2017 Final Project 
- * Team members:
- * 	Changyu Bi
- *	Jiachen He
- */
-
 module final_project(
 		CLOCK_50,
 		KEY,
@@ -74,7 +66,11 @@ module final_project(
 		
 //    wire [319:0] new_array = 320'b00000000001000000000010000000001000000000010000000000000000010000000000000000001000000000000000100000000001100000000000000000100000000000000000100000000000000010000000000010000000000001000000000000000010000000000000000110000000000000000100000000000000000010000000000001100000000000011000000000000000001000000000000000011;
     wire [27:0] rate = 28'b0000001011011100011011000000;
-	 wire [27:0] score;
+	 wire [13:0] score;
+	 wire [3:0] score_thousands;
+	 wire [3:0] score_hundreds;
+	 wire [3:0] score_tens;
+	 wire [3:0] score_ones;
 //   wire [159:0] floor = 120'b0;
     wire [1112:0] draw;
 
@@ -114,32 +110,31 @@ module final_project(
 	.counter(counter)
 	);
 
-//	renderPipes d1(
-//	.local_draw(local_draw),
-//	.counter(counter),
-//	.clk(CLOCK_50),
-//	.x(x),
-//	.y(y),
-//	.colour(colour)
-//	);
-	
+	bcd b0(
+		.number(score),
+		.thousands(score_thousands),
+		.hundreds(score_hundreds),
+		.tens(score_tens),
+		.ones(score_ones)
+	);
+
 	hex_display h0(
-		.IN(score[3:0]),
+		.IN(score_ones),
 		.OUT(HEX0)
 	);
 
 	hex_display h1(
-		.IN(score[7:4]),
+		.IN(score_tens),
 		.OUT(HEX1)
 	);	
 
 	hex_display h2(
-		.IN(score[11:8]),
+		.IN(score_hundreds),
 		.OUT(HEX2)
 	);
 
-	hex_display h3(
-		.IN(score[15:12]),
+	 hex_display h3(
+		.IN(score_thousands),
 		.OUT(HEX3)
 	);
 endmodule
@@ -206,14 +201,13 @@ module datapath (
     input start,
     input move,
     input jump,
-    input [27:0] rate,	
+	 input [27:0] rate,	
 	input resetn,
 	output [14:0] LEDR,
 	output reg [27:0] score,
 	output reg [1112:0] draw,
 	output reg lose
     );
-	    
     //1011011100011011000000
     reg [27:0] count;
 	 
@@ -235,7 +229,7 @@ module datapath (
 			count <= rate;
         	height <= 7'd40;
 			going_up <= 1'b1;
-			score <= 14'b0;
+			score <= 13'b0;
 			lose <= 1'b0;
 		end
         else if (start) begin
@@ -244,7 +238,7 @@ module datapath (
          draw <= 1112'b0;
 			obstacles[1105:0] <= {7'd35, big_gap, 7'd40, big_gap, 7'd20, big_gap, 7'd30, big_gap};
 			going_up <= 1'b1;
-			score <= 14'b0;
+			score <= 13'b0;
 			lose <= 1'b0;
         end
 		else begin
@@ -254,6 +248,7 @@ module datapath (
             draw = draw << 7;
 				draw[6:0] = obstacles[1105:1099];
 				obstacles[1105:0] = {obstacles[1098:0], obstacles[1105:1099]};
+
 				// If height reaches ground lose the game
 				if (height == 7'd0) 
 					lose <= 1'b1;
@@ -386,81 +381,73 @@ module display (
 	end
 endmodule
 
-//module renderPipes (
-//    input [1105:0] draw,
-//	 input [15:0] counter,
-//    input clk,
-//    output reg [7:0] x,
-//    output reg [6:0] y,
-//    output reg [2:0] colour
-//    );
-//	 
-//   reg [7:0] x_init = 8'd2;
-//	reg [8:0] y_init = 9'd84;
-//	reg [7:0] y_pixel;
-//	reg [7:0] pipe_height;
-//	reg [1105:0] local_draw;
-//
-//   always@(posedge clk) begin
-//
-//		reg [2:0] count = 3'b000;
-//
-//		if (counter < 15'd12800) begin
-//			count = (counter-160) % 320;
-//			if (count < 80)
-//				x <= x_init;
-//			if (count < 160)
-//				x <= x_init + 1;
-//			if (count < 240)
-//				x <= x_init + 2;
-//			if (count < 320)
-//				x <= x_init + 3;
-//
-//			y_pixel = count % 80;
-//			y <= y_init - y_pixel;
-//			pipe_height = local_draw[1105:1098];
-//			if (y_pixel < pipe_height || y_pixel > pipe_height + 4'd12)
-//				colour = 3'b110;
-//			else 
-//				colour = 3'b011;
-//
-//			if (pipe_height == 7'd0) 
-//				colour = 3'b011;
-//
-//			if (count == 15'd320) begin
-//				x_init <= x_init + 4;
-//				local_draw <= local_draw << 7;
-//			end
-//		end	
-//	end
-//endmodule
-
 module hex_display(IN, OUT);
     input [3:0] IN;
-	 output reg [7:0] OUT;
-	 
-	 always @(*)
-	 begin
-		case(IN[3:0])
-			4'b0000: OUT = 7'b1000000;
-			4'b0001: OUT = 7'b1111001;
-			4'b0010: OUT = 7'b0100100;
-			4'b0011: OUT = 7'b0110000;
-			4'b0100: OUT = 7'b0011001;
-			4'b0101: OUT = 7'b0010010;
-			4'b0110: OUT = 7'b0000010;
-			4'b0111: OUT = 7'b1111000;
-			4'b1000: OUT = 7'b0000000;
-			4'b1001: OUT = 7'b0011000;
-			4'b1010: OUT = 7'b0001000;
-			4'b1011: OUT = 7'b0000011;
-			4'b1100: OUT = 7'b1000110;
-			4'b1101: OUT = 7'b0100001;
-			4'b1110: OUT = 7'b0000110;
-			4'b1111: OUT = 7'b0001110;
-			
-			default: OUT = 7'b0111111;
-		endcase
+	output reg [7:0] OUT;
+	
+	always @(*)
+	begin
+	case(IN[3:0])
+		4'b0000: OUT = 7'b1000000;
+		4'b0001: OUT = 7'b1111001;
+		4'b0010: OUT = 7'b0100100;
+		4'b0011: OUT = 7'b0110000;
+		4'b0100: OUT = 7'b0011001;
+		4'b0101: OUT = 7'b0010010;
+		4'b0110: OUT = 7'b0000010;
+		4'b0111: OUT = 7'b1111000;
+		4'b1000: OUT = 7'b0000000;
+		4'b1001: OUT = 7'b0011000;
+		4'b1010: OUT = 7'b0001000;
+		4'b1011: OUT = 7'b0000011;
+		4'b1100: OUT = 7'b1000110;
+		4'b1101: OUT = 7'b0100001;
+		4'b1110: OUT = 7'b0000110;
+		4'b1111: OUT = 7'b0001110;
+		
+		default: OUT = 7'b0111111;
+	endcase
 
 	end
+endmodule
+
+module bcd(number, thousands, hundreds, tens, ones);
+   input  [13:0] number;
+   output reg [3:0] thousands;
+   output reg [3:0] hundreds;
+   output reg [3:0] tens;
+   output reg [3:0] ones;
+   
+   reg [29:0] shift;
+   integer i;
+   
+   always @(number)
+   begin
+      shift[29:14] = 0;
+      shift[13:0]  = number;
+      
+      for (i=0; i<14; i=i+1) begin
+         if (shift[17:14] >= 5)
+            shift[17:14] = shift[17:14] + 3;
+            
+         if (shift[21:18] >= 5)
+            shift[21:18] = shift[21:18] + 3;
+            
+         if (shift[25:22] >= 5)
+            shift[25:22] = shift[25:22] + 3;
+
+		if (shift[29:26] >= 5)
+			shift[29:26] = shift[29:26] + 3;
+         
+         // Shift entire register left once
+         shift = shift << 1;
+      end
+      
+      // Push decimal numbers to output
+	  thousands = shift[29:26];
+      hundreds  = shift[25:22];
+      tens      = shift[21:18];
+      ones      = shift[17:14];
+   end
+ 
 endmodule
