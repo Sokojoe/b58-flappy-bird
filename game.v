@@ -39,7 +39,7 @@ module final_project(
 	wire [2:0] colour;
 	wire [7:0] x;
 	wire [6:0] y;
-	
+
 	wire resetn = KEY[0]; 
 	//wire writeEn = ~KEY[1];
 	
@@ -65,22 +65,21 @@ module final_project(
 		defparam VGA.BACKGROUND_IMAGE = "black.mif";
 		
 //    wire [319:0] new_array = 320'b00000000001000000000010000000001000000000010000000000000000010000000000000000001000000000000000100000000001100000000000000000100000000000000000100000000000000010000000000010000000000001000000000000000010000000000000000110000000000000000100000000000000000010000000000001100000000000011000000000000000001000000000000000011;
-    wire [27:0] rate = 28'b0000001011011100011011000000;
 	 wire [13:0] score;
 	 wire [3:0] score_thousands;
 	 wire [3:0] score_hundreds;
 	 wire [3:0] score_tens;
 	 wire [3:0] score_ones;
-//   wire [159:0] floor = 120'b0;
     wire [1112:0] draw;
-
+    wire [27:0] rate;
+	 
     wire start, move, lose;
     
     control c(
 	.clk(CLOCK_50),
 	.go(~KEY[2]),
 	.stop(~KEY[1]),
-    .start(start),
+   .start(start),
 	.resetn(resetn),
 	.move(move),
 	.lose(lose)
@@ -110,6 +109,11 @@ module final_project(
 	.counter(counter)
 	);
 
+	difficultySwitch diffSw(
+		.sel(SW[1:0]),
+		.rate(rate)
+	);
+	
 	bcd b0(
 		.number(score),
 		.thousands(score_thousands),
@@ -139,6 +143,20 @@ module final_project(
 	);
 endmodule
 
+module difficultySwitch(
+	input [1:0] sel,
+	output reg [27:0] rate
+	);
+	
+	always @(*) begin
+		case(sel)
+			2'b00: rate = 28'd1500000; //normal
+			2'b01: rate = 28'd1000000; //hard
+			2'b10: rate = 28'd800000;  //hardest
+			2'b11: rate = 28'd15000000; //debug (super slow)
+		endcase
+	end
+endmodule
 
 module control(
 	input clk,
