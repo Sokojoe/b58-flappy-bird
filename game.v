@@ -228,6 +228,7 @@ module datapath (
     );
     //1011011100011011000000
     reg [27:0] count;
+	 reg [2:0] count2;
 	 
 	reg [1112:0] obstacles;
 
@@ -240,33 +241,37 @@ module datapath (
     reg going_up = 1'b1;
 	 
 	 parameter gap = 7'b0000000;
-	 parameter big_gap = {8{gap}};
+	 parameter big_gap = {12{gap}};
     
     always@(posedge clk) begin
 		if (!resetn) begin
 			count <= rate;
+			count2 <= 2'd3;
         	height <= 7'd40;
 			going_up <= 1'b1;
-			score <= 13'b0;
 			lose <= 1'b0;
 		end
         else if (start) begin
         	count <= rate;
         	height <= 7'd40;
          draw <= 1112'b0;
-			obstacles[1105:0] <= {7'd35, big_gap, 7'd40, big_gap, 7'd20, big_gap, 7'd30, big_gap};
+			obstacles[1105:0] <= {7'd35, big_gap, 7'd40, big_gap, 7'd20, big_gap, 7'd30, big_gap, 7'd45, big_gap, 7'd25, big_gap, 7'd35, big_gap, 7'd10};
 			going_up <= 1'b1;
 			score <= 13'b0;
 			lose <= 1'b0;
+			count2 <= 2'd3;
         end
 		else begin
             if (count == 28'b0) begin
                 count <= rate;
 				score = score + 1;
-            draw = draw << 7;
-				draw[6:0] = obstacles[1105:1099];
-				obstacles[1105:0] = {obstacles[1098:0], obstacles[1105:1099]};
-
+				if (count2 == 1'b0) begin
+					draw = draw << 7;
+					draw[6:0] = obstacles[1105:1099];
+					obstacles[1105:0] = {obstacles[1098:0], obstacles[1105:1099]};
+					count2 = 2'd3;
+				end else
+					count2 = count2 - 1;
 				// If height reaches ground lose the game
 				if (height == 7'd0) 
 					lose <= 1'b1;
